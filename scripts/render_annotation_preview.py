@@ -1,15 +1,25 @@
+import argparse
 import json
-import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
 
-def main(image_path: str, annotation_path: str, output_path: str) -> None:
+def main(image_path: str, annotation_path: str, output_path: str, font_file: str | None = None) -> None:
     image = Image.open(image_path).convert("RGBA")
     overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
-    font_file = "C:/Windows/Fonts/msyh.ttc"
+    if font_file is None:
+        candidates = (
+            "C:/Windows/Fonts/msyh.ttc",
+            "/System/Library/Fonts/PingFang.ttc",
+            "/System/Library/Fonts/Supplemental/Songti.ttc",
+            "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+        )
+        font_file = next((p for p in candidates if Path(p).is_file()), None)
+    if font_file is None:
+        raise RuntimeError("未找到中文字体；请用 --font 指定已确认可用的中文字体文件")
     font = ImageFont.truetype(font_file, 28)
     small_font = ImageFont.truetype(font_file, 18)
     colors = [(38, 103, 255, 225), (255, 105, 92, 225), (41, 167, 102, 225), (181, 100, 255, 225)]
@@ -38,4 +48,13 @@ def main(image_path: str, annotation_path: str, output_path: str) -> None:
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:4])
+    parser = argparse.ArgumentParser(description="生成中文区域编号与方向检查图")
+    parser.add_argument("image", help="原图路径")
+    parser.add_argument("annotation", help="标注 JSON 路径")
+    parser.add_argument("output", help="预览图输出路径")
+    parser.add_argument("--font", help="已有中文字体文件；默认探测常用系统字体")
+    args = parser.parse_args()
+    try:
+        main(args.image, args.annotation, args.output, args.font)
+    except (OSError, RuntimeError) as exc:
+        parser.exit(1, f"[err] {exc}\n")

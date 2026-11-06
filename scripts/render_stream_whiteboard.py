@@ -72,7 +72,13 @@ class RegionStreamRenderer:
                  hand_png: Path | None, bare_tip: bool) -> None:
         self.cfg = cfg
         self.ann = annotation
-        self.canvas_bgr = sr._hex_to_bgr(cfg.canvas_hex)
+        # 取原图四角向内 2px 的样点，保持纸张底色与源图一致。
+        h, w = image_bgr.shape[:2]
+        ix, iy = min(2, (w - 1) // 2), min(2, (h - 1) // 2)
+        self.canvas_bgr = np.median([
+            image_bgr[iy, ix], image_bgr[iy, w - 1 - ix],
+            image_bgr[h - 1 - iy, ix], image_bgr[h - 1 - iy, w - 1 - ix],
+        ], axis=0).astype(np.uint8)
 
         # 输出尺寸：长边限到 cap，对齐到 grid_edge 的偶数倍（编码要求偶数）
         h0, w0 = image_bgr.shape[:2]
@@ -269,6 +275,8 @@ class RegionStreamRenderer:
         cfg = self.cfg
         ys_all, xs_all = np.where(allowed)
         if ys_all.size == 0:
+            for _ in range(frames):
+                writer.write(self.drawn.astype(np.uint8))
             return
         top, bottom = int(ys_all.min()), int(ys_all.max())
         left, right = int(xs_all.min()), int(xs_all.max())
@@ -402,7 +410,7 @@ class RegionStreamRenderer:
                         self._lay_ink_grid(writer, ink_frames, samples, pen_lifts, sample_cell, path, allowed)
                         centers = [self._cell_center(c) for c in path]
                     else:
-                        self._lay_ink(writer, ink_frames, [], set(), None, allowed)
+                        self._lay_ink(writer, ink_frames, [], set(), allowed)
                         centers = []
 
                 cur_ms += ink_frames * ms_per_frame

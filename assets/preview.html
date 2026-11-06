@@ -186,7 +186,7 @@ async function loadPairs(names, getFile, getHandle) {
   if (!scenes.length) { toast('目录里没有图片', true); return; }
   S.scenes = scenes; S.dirty.clear();
   const sel = $('sceneSel');
-  sel.innerHTML = scenes.map((s, i) => `<option value="${i}">${i+1}. ${s.name}${s.hasConfig ? '' : '（未标注）'}</option>`).join('');
+  sel.innerHTML = scenes.map((s, i) => `<option value="${i}">${i+1}. ${escapeHtml(s.name)}${s.hasConfig ? '' : '（未标注）'}</option>`).join('');
   sel.disabled = $('prevBtn').disabled = $('nextBtn').disabled = false;
   $('sceneCount').textContent = `共 ${scenes.length} 张（${scenes.filter(s=>s.hasConfig).length} 张带标注）`;
   $('hint').hidden = true; canvas.hidden = false; $('side').hidden = false;

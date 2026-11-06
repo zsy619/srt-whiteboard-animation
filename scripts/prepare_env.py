@@ -14,7 +14,7 @@
 """
 from __future__ import annotations
 
-import os
+import argparse
 import subprocess
 import sys
 import venv
@@ -81,7 +81,9 @@ def install(py: Path, packages: list[str]) -> bool:
 
 
 def main() -> None:
-    check_only = "--check" in sys.argv
+    parser = argparse.ArgumentParser(description="探测或准备隔离的白板动画 Python 环境")
+    parser.add_argument("--check", action="store_true", help="仅探测；缺环境或依赖时非零退出")
+    check_only = parser.parse_args().check
 
     py = ensure_venv(check_only)
 
